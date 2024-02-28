@@ -1,0 +1,42 @@
+#------------------------------------------------------------------------------
+# This is a fake CIF file to demonstrate rgl.cry package.
+# These parameters were dirived from [1] and have been modified for our use.
+#
+# [1] https://www.crystallography.net/cod/1100042.cif
+#------------------------------------------------------------------------------
+
+_pd_phase_name                  'TiO'
+_cell_length_a                   5.855(3)
+_cell_length_b                   9.340(5)
+_cell_length_c                   4.142(2)
+_cell_angle_alpha                90
+_cell_angle_beta                 90
+_cell_angle_gamma                107.53(5)
+_symmetry_space_group_name_H-M   'A 1 1 2/m'
+_symmetry_Int_Tables_number      12
+
+loop_
+_symmetry_equiv_pos_as_xyz
+'x, y, z'
+'-x, -y, z'
+'-x, -y, -z'
+'x, y, -z'
+'x, 1/2+y, 1/2+z'
+'-x, 1/2-y, 1/2+z'
+'-x, 1/2-y, 1/2-z'
+'x, 1/2+y, 1/2-z'
+
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Ti1 Ti0 0.5 0 0 1
+Ti2 Ti0 0.164(5) 0.336(3) 0 1
+Ti3 Ti0 0.6666(5) 0.340(2) 0 1
+O1 O0 0.324(16) 0.181(9) 0 1
+O2 O0 0.819(16) 0.165(10) 0 1
+O3 O0 0 0.5 0 1
+
