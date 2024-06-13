@@ -98,19 +98,20 @@ align <- function(ax, dev = NULL, verbose = TRUE) {
     ## Align the specified lattice vector to be perpedicular the screen (z).
 
     xyzf <- matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1), ncol = 3, byrow = TRUE) #
+    xyz <- cry::frac_to_orth(xyzf, uc$a, uc$b, uc$c,
+                             uc$alpha, uc$beta, uc$gamma, 2)
 
     if (length(grep("^r", ax)) != 1) { #
-      xyz <- cry::frac_to_orth(
-        xyzf, uc$a, uc$b, uc$c,
-        uc$alpha, uc$beta, uc$gamma, 2
-      )
       e <- matrix(unlist(xyz), ncol = 3, byrow = FALSE)
     } else {
-      xyzr <- cry::frac_to_orth(
-        xyzf, ruc$ar, ruc$br, ruc$cr,
-        ruc$alpha, ruc$beta, ruc$gamma, 2
-      )
-      e <- matrix(unlist(xyzr), ncol = 3, byrow = FALSE)
+      ea1 <- as.numeric(xyz[1,])
+      ea2 <- as.numeric(xyz[2,])
+      ea3 <- as.numeric(xyz[3,])
+      V <- as.numeric(ea1 %*% pracma::cross(ea2, ea3))
+      eb1 <- pracma::cross(ea2, ea3) / V
+      eb2 <- pracma::cross(ea3, ea1) / V
+      eb3 <- pracma::cross(ea1, ea2) / V
+      e <- matrix(rbind(eb1, eb2, eb3), ncol = 3, byrow = FALSE)
     }
 
     ax <- gsub("r", "", ax)
@@ -129,12 +130,24 @@ align <- function(ax, dev = NULL, verbose = TRUE) {
     }
 
     tmp <- e[t1, ] * c(0, 1, 1) # Project the axis to the yz-plane.
-    rotX <- acos(tmp[3] / norm(tmp, "2")) # Angle between projected tgt. and z.
+    if (tmp[2] != 0) {
+      rotX <- acos(tmp[3] / norm(tmp, "2")) # Angle between tgt. and z.
+      rotX <- ifelse(tmp[2] > 0, -rotX, rotX) #
+    }
+    else {
+      rotX <- 0
+    }
     umatX <- rgl::rotationMatrix(rotX, 1, 0, 0) # rot. mat. around the x axis.
     e <- e %*% umatX[1:3, 1:3] # Update the vector's coordinates.
 
     tmp <- e[t1, ] * c(1, 0, 1) # Project the axis to the xz-plane
-    rotY <- acos(tmp[3] / norm(tmp, "2"))
+    if (tmp[1] != 0) {
+      rotY <- acos(tmp[3] / norm(tmp, "2"))
+      rotY <- ifelse(tmp[1] > 0, rotY, -rotY) #
+    }
+    else {
+      rotY <- 0
+    }
     umatY <- rgl::rotationMatrix(rotY, 0, 1, 0) # rotation around the y axis
     e <- e %*% umatY[1:3, 1:3] # apply rotate
 
@@ -155,11 +168,13 @@ align <- function(ax, dev = NULL, verbose = TRUE) {
 
     tmp <- e * c(0, 1, 1) # Project the axis to the yz-plane.
     rotX <- acos(tmp[3] / norm(tmp, "2")) # Angle between projected tgt. and z.
+    rotX <- ifelse(tmp[2] > 0, -rotX, rotX) #
     umatX <- rgl::rotationMatrix(rotX, 1, 0, 0) # rot. mat. around the x axis.
     e <- e %*% umatX[1:3, 1:3] # Update the vector's coordinates.
 
     tmp <- e * c(1, 0, 1) # Project the axis to the xz-plane
     rotY <- acos(tmp[3] / norm(tmp, "2"))
+    rotY <- ifelse(tmp[1] > 0, rotY, -rotY) #
     umatY <- rgl::rotationMatrix(rotY, 0, 1, 0) # rotation around the y axis
     e <- e %*% umatY[1:3, 1:3] # apply rotate
   } else if (length(grep("^[-]?[0-9.]+ [-]?[0-9.]+$", ax)) == 1) { # rotX, rotY

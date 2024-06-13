@@ -1,6 +1,9 @@
-# rgl.cry (development version)
+# rgl.cry 0.1.1
 
-rgl.cry 0.1.0
-------------------------------------------------------------
+## Bug fixes
+
+* Bug fix in reciprocal lattice vector coordinate derivation.
+
+# rgl.cry 0.1.0
 
 * Initial CRAN submission.

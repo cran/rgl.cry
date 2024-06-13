@@ -4,7 +4,7 @@
 \alias{dp_demo}
 \title{Examples of using the cry and rgl packages together.}
 \usage{
-dp_demo(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE)
+dp_demo(file = NULL, reso = 1.2, ews.r = 40, zoom = 0.5, xrd = FALSE)
 }
 \arguments{
 \item{file}{Optional file in CIF formats.}
@@ -14,7 +14,7 @@ default value takes a long time to process displaying due to the large number
 of lattice points, you can expect to improve performance by increasing the
 value.}
 
-\item{ews.r}{Ewald sphere radius in angstrom.}
+\item{ews.r}{Ewald sphere radius in angstrom^-1.}
 
 \item{zoom}{A positive value indicating the current scene magnification.}
 
@@ -44,6 +44,7 @@ for atomic ionization and uses standard atomic scattering factors.
 \examples{
 dp_demo()
 dp_demo(system.file("orthorhombic_p.cif", package = "rgl.cry"))
+dp_demo(system.file("orthorhombic_p.cif", package = "rgl.cry"), res = 2.0)
 
 \donttest{
 if (interactive()) {

@@ -3,19 +3,28 @@
 # rgl.cry
 
 <!-- badges: start -->
+
+[![CRAN
+status](https://www.r-pkg.org/badges/version/rgl.cry)](https://CRAN.R-project.org/package=rgl.cry)
+[![R-CMD-check](https://github.com/SaitouToshihide/rgl.cry/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/SaitouToshihide/rgl.cry/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-This package provides tools for selected area electron diffraction
-(SAED) pattern and crystal structure visualization by using `rgl` and
-`cry` packages. In particular `cry_demo()` and `dp_demo()` read a file
-in CIF formats (Crystallographic Information Framework) and display SAED
-pattern and crystal structure. The function `dp_demo()` also performs
-simple simulation of powder X-ray diffraction (PXRD) pattern and it can
-be saved the results to a file in the working directory.
+This is a use case for the `cry` and `rgl` packages. This package
+provides tools for selected area electron diffraction (SAED) pattern and
+crystal structure visualization using the `rgl` and `cry` packages. In
+particular, the `cry_demo()` and `dp_demo()` function read files in CIF
+(Crystallographic Information Framework) format and display SAED
+patterns and crystal structures. The `dp_demo()` function also performs
+simple simulations of powder X-ray diffraction (PXRD) patterns, and the
+results can be saved to a file in the working directory.
 
 The package has been tested on several platforms, including Linux on
 Crostini with a Core™ m3-8100Y Chromebook, I found that even on this
 low-powered platform, the performance was acceptable.
+
+## Web Resources
+
+<https://saitoutoshihide.github.io/rgl.cry/>
 
 ## Installation
 
@@ -25,15 +34,15 @@ install.packages("rgl.cry")
 
 ## Example
 
-A CIF file is read. A reciprocal lattice map with a cell widget drawn.
-In this example, a file is not specified. Therefore, a system default is
-used.
+A CIF file is read, and a reciprocal lattice map with a cell widget is
+drawn. In this example, a file is not specified, so the system default
+is used.
 
 ``` r
 dp_demo()
 ```
 
-A CIF file is read. A crystal structure with a axis widget drawn.
+A CIF file is read, and a crystal structure with a axis widget is drawn.
 
 ``` r
 cry_demo()
@@ -45,7 +54,7 @@ The crystal and diffraction pattern are aligned and displayed.
 
 ``` r
 align("a")
-align("c*")
+align("ra")
 align("30 30") # x, y (deg)
 ```
 
@@ -60,24 +69,21 @@ be displayed.
 To select points, use dragging the left mouse button.
 To finish, press ESC.
 .
-1 0 -2
-1 0 0
-1 0 2
+ [1] "1 1 -3" "1 0 -2" "2 0 -2" "1 1 -1" "1 0 0"  "2 0 0"  "1 1 1"  "1 0 2" 
 
 > cry_demo()
 [1] 2
 > select()
 To select points, use dragging the left mouse button.
 To finish, press ESC.
-...
-O3 
-O3 
+.
+[1] "Ti1" "Ti1"
 ```
 
 ### Extras
 
-`dp_demo()` can perform PXRD pattern simulation. The result is putted as
-a file on the current directory by specifying options like this:
+`dp_demo()` can perform PXRD pattern simulation. The result is saved as
+a file in the current directory by specifying options like this:
 
 ``` r
 ## Output the simulation results of the PXDR pattern as a file.

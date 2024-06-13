@@ -374,7 +374,8 @@ cry_demo <- function(file = NULL, rf = 1, type = "b", zoom = 1) {
 
   ## Place the dummy sphere to prevent the draw area from modification.
   ## r=0 is prevention of protrusion.
-  rgl::spheres3d(frame, r = 0, color = "green", alpha = 0) #
+  rgl::spheres3d(100*frame, r = 0, color = "green", alpha = 0) #
+  rgl::par3d(zoom = 0.2) #
 
   ## Axis widget
   oo <- c(0, 0, 0)
@@ -395,9 +396,6 @@ cry_demo <- function(file = NULL, rf = 1, type = "b", zoom = 1) {
   rgl::text3d(b0, texts = "b", cex = 1.0, col = "black")
   rgl::text3d(c0, texts = "c", cex = 1.0, col = "black")
 
-  ##
-  rgl::par3d(zoom = 2) # fixed value for widget.
-
 
   ## ------------------------------------------------------------
   ## Subscene on the top of scenes for event handling.
@@ -417,8 +415,6 @@ cry_demo <- function(file = NULL, rf = 1, type = "b", zoom = 1) {
   start$time <- 0
 
   begin <- function(x, y) {
-    ## Save the device ID when the function is called and restore it later.
-    cur.dev <- rgl::cur3d()
 
     ## Save parameters.
     time.current <- as.numeric(Sys.time()) * 1000 # micro to milli
@@ -436,10 +432,11 @@ cry_demo <- function(file = NULL, rf = 1, type = "b", zoom = 1) {
 
     ## Retrieve the cry and dp pair of this instance.
     inst <- pkg$inst # Get the current list of instance.
-    start$dp.dev <<- inst[inst$cry.dev == cry.dev, "dp.dev"]
-    start$dp.widget.id <<- inst[inst$cry.dev == cry.dev, "dp.widget.id"]
-    start$dp.root.id <<- inst[inst$cry.dev == cry.dev, "dp.root.id"]
-    start$dp.panel.id <<- inst[inst$cry.dev == cry.dev, "dp.panel.id"]
+    idx <- which(inst$cry.dev == cry.dev)
+    start$dp.dev <<- inst[idx, "dp.dev"]
+    start$dp.widget.id <<- inst[idx, "dp.widget.id"]
+    start$dp.root.id <<- inst[idx, "dp.root.id"]
+    start$dp.panel.id <<- inst[idx, "dp.panel.id"]
 
 
     ## The rotation is reset to its original value when the mouse is
@@ -461,6 +458,7 @@ cry_demo <- function(file = NULL, rf = 1, type = "b", zoom = 1) {
         rgl::useSubscene3d(start$dp.panel.id)
         idx <- which(inst$dp.dev == start$dp.dev)
         inst[[idx, "drawDp"]]()
+        rgl::set3d(cry.dev, silent = TRUE)
       }
     }
 
@@ -468,24 +466,19 @@ cry_demo <- function(file = NULL, rf = 1, type = "b", zoom = 1) {
     start$x <<- x
     start$y <<- y
     start$umat <<- umat
-
-    ## Restore the device ID.
-    rgl::set3d(cur.dev, silent = TRUE)
   }
 
   ## Rotate and redraw by draging the mouse.
   update <- function(x, y) {
-    ## Save the device ID when the function is called and restore it later.
-    cur.dev <- rgl::cur3d()
 
     ## Get the umat at the begining.
     umat <- start$umat # call begin then call update without sequencially
-    viewport <- rgl::par3d("viewport")
+    viewport <- rgl::par3d("viewport", dev = cry.dev)
 
     w <- viewport[["width"]]
     h <- viewport[["height"]]
-    x <- (x - start$x) / viewport[["width"]] / 1 # 1 is enpirically derived.
-    y <- (y - start$y) / viewport[["height"]] / 1
+    x <- (x - start$x) / w / 1 # 1 is enpirically derived.
+    y <- (y - start$y) / h / 1
 
     rot <- 0
     if (start$x > 0.95 * w) {
@@ -530,10 +523,9 @@ cry_demo <- function(file = NULL, rf = 1, type = "b", zoom = 1) {
       inst <- pkg$inst # Get the current list of instance.
       idx <- which(inst$dp.dev == start$dp.dev)
       inst[[idx, "drawDp"]]()
+      rgl::set3d(cry.dev, silent = TRUE)
     }
 
-    ## Restore the device ID.
-    rgl::set3d(cur.dev, silent = TRUE)
   }
 
 

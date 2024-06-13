@@ -24,7 +24,7 @@
 #' default value takes a long time to process displaying due to the large number
 #' of lattice points, you can expect to improve performance by increasing the
 #' value.
-#' @param ews.r Ewald sphere radius in angstrom.
+#' @param ews.r Ewald sphere radius in angstrom^-1.
 #' @param zoom A positive value indicating the current scene magnification.
 #' @param xrd A logical value indicating whether to create an X-ray diffraction
 #' pattern simulation result file.
@@ -36,6 +36,7 @@
 #' @examples
 #' dp_demo()
 #' dp_demo(system.file("orthorhombic_p.cif", package = "rgl.cry"))
+#' dp_demo(system.file("orthorhombic_p.cif", package = "rgl.cry"), res = 2.0)
 #'
 #' \donttest{
 #' if (interactive()) {
@@ -43,7 +44,8 @@
 #'  dp_demo("https://www.crystallography.net/cod/foo.cif")
 #' }
 #' }
-dp_demo <- function(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE) {
+dp_demo <- function(file = NULL, reso = 1.2, ews.r = 40, zoom = 0.5, xrd = FALSE) {
+
   list(file = file, reso = reso, ews.r = ews.r, zoom = zoom, xrd = xrd)
 
   ## File or lCIF object to use.
@@ -70,16 +72,32 @@ dp_demo <- function(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE
   uc <- cry::create_unit_cell(a, b, c, aa, bb, cc)
   ruc <- cry::create_rec_unit_cell(uc)
 
-  ##
+  ## Create a data of Miller indices.
+  ## 
+  ## The systematic absences have been taken into account in
+  ## cry::generate_miller() by calling cry::deplete_systematic_absences().
   hkl <- cry::generate_miller(uc, SG, reso) # list the h+k+l <= reso.
-  pos <- cry::frac_to_orth(
-    hkl[, c("H", "K", "L")],
-    ruc$ar, ruc$br, ruc$cr,
-    ruc$alpha, ruc$beta, ruc$gamma, 2
+
+  xyzf <- matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1), ncol = 3, byrow = TRUE) #
+  xyz <- cry::frac_to_orth(
+    xyzf, a, b, c,
+    aa, bb, cc, 2
   )
+  ea1 <- as.numeric(xyz[1, ])
+  ea2 <- as.numeric(xyz[2, ])
+  ea3 <- as.numeric(xyz[3, ])
+
+  V <- as.numeric(ea1 %*% pracma::cross(ea2, ea3))
+  eb1 <- pracma::cross(ea2, ea3) / V
+  eb2 <- pracma::cross(ea3, ea1) / V
+  eb3 <- pracma::cross(ea1, ea2) / V
+
+  pos <- t(apply(hkl, 1, function(v) {
+    v["H"] * eb1 + v["K"] * eb2 + v["L"] * eb3
+  }))
 
   ## Ewald sphere and text label settings.
-  ews.r <- 37 # electron beam at 200 kV
+  ##ews.r <- 40 # relativistic wave number of electron beam at 200 kV
   ews.pos <- c(0, 0, ews.r) # center of Ewald sphere.
   text.offset <- c(0.03, 0.03, 0) # offset for text.
 
@@ -269,7 +287,8 @@ dp_demo <- function(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE
         x <- v[1]
         y <- v[2]
         z <- v[3]
-        complex(0, cos(2 * pi * (h * x + k * y + l * z)), sin(2 * pi * (h * x + k * y + l * z)))
+        complex(0, cos(2 * pi * (h * x + k * y + l * z)),
+                sin(2 * pi * (h * x + k * y + l * z)))
       }))
     }
 
@@ -435,14 +454,19 @@ dp_demo <- function(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE
 
 
   ## lattice
+  ## 
+  ## When ochoice = 2, as the help document of frac_to_orth() states, "The X axis
+  ## is along a*; the Y axis lies in the (a*,b*) plane; the Z axis is,
+  ## consequently, along c."
+  ## 
   xyz <- cry::frac_to_orth(
     xyzf, uc$a, uc$b, uc$c,
     uc$alpha, uc$beta, uc$gamma, 2
   )
   xyz_max <- max(xyz[1, ], xyz[2, ], xyz[3, ])
-  ea1 <- (unlist(xyz[1, ]) / xyz_max)
-  ea2 <- (unlist(xyz[2, ]) / xyz_max)
-  ea3 <- (unlist(xyz[3, ]) / xyz_max)
+  ea1 <- as.numeric(xyz[1, ]) / xyz_max
+  ea2 <- as.numeric(xyz[2, ]) / xyz_max
+  ea3 <- as.numeric(xyz[3, ]) / xyz_max
 
   lines <- rbind(
     oo, ea1, oo, ea2, ea1 + ea2, ea1, ea1 + ea2, ea2,
@@ -456,14 +480,14 @@ dp_demo <- function(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE
 
 
   ## reciprocal lattice
-  xyzr <- cry::frac_to_orth(
-    xyzf, ruc$ar, ruc$br, ruc$cr,
-    ruc$alpha, ruc$beta, ruc$gamma, 2
-  )
-  xyzr_max <- max(xyzr[1, ], xyzr[2, ], xyzr[3, ])
-  eb1 <- unlist(xyzr[1, ]) / xyzr_max
-  eb2 <- unlist(xyzr[2, ]) / xyzr_max
-  eb3 <- unlist(xyzr[3, ]) / xyzr_max
+  V <- as.numeric(ea1 %*% pracma::cross(ea2, ea3))
+  eb1 <- pracma::cross(ea2, ea3) / V
+  eb2 <- pracma::cross(ea3, ea1) / V
+  eb3 <- pracma::cross(ea1, ea2) / V
+  eb_max <- max(eb1, eb2, eb3)
+  eb1 <- eb1 / eb_max
+  eb2 <- eb2 / eb_max
+  eb3 <- eb3 / eb_max
 
   lines <- rbind(
     oo, eb1, oo, eb2, eb1 + eb2, eb1, eb1 + eb2, eb2,
@@ -494,8 +518,6 @@ dp_demo <- function(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE
   start$time <- 0
 
   begin <- function(x, y) {
-    ## Save the device ID when the function is called and restore it later.
-    cur.dev <- rgl::cur3d()
 
     ## Save parameters.
     time.current <- as.numeric(Sys.time()) * 1000 # micro to milli
@@ -513,10 +535,11 @@ dp_demo <- function(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE
 
     ## Retrieve the cry and dp pair of this instance.
     inst <- pkg$inst # Get the current list of instance.
+    idx <- which(inst$dp.dev == dp.dev)
     start$cry.dev <<- inst[inst$dp.dev == dp.dev, "cry.dev"]
-    start$cry.widget.id <<- inst[inst$dp.dev == dp.dev, "cry.widget.id"]
-    start$cry.root.id <<- inst[inst$dp.dev == dp.dev, "cry.root.id"]
-    start$cry.panel.id <<- inst[inst$dp.dev == dp.dev, "cry.panel.id"]
+    start$cry.widget.id <<- inst[idx, "cry.widget.id"]
+    start$cry.root.id <<- inst[idx, "cry.root.id"]
+    start$cry.panel.id <<- inst[idx, "cry.panel.id"]
 
 
     ## The rotation is reset to its original value when the mouse is
@@ -537,6 +560,7 @@ dp_demo <- function(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE
         rgl::par3d(subscene = start$cry.panel.id, userMatrix = umat)
         rgl::useSubscene3d(start$cry.panel.id)
         ## drawCry() # not necessary.
+        rgl::set3d(dp.dev, silent = TRUE)
       }
     }
 
@@ -544,25 +568,19 @@ dp_demo <- function(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE
     start$x <<- x
     start$y <<- y
     start$umat <<- umat
-
-    ## Restore the device ID.
-    rgl::set3d(cur.dev, silent = TRUE)
   }
 
   ## Rotate and redraw by draging the mouse.
   update <- function(x, y) {
-    ## Save the Device ID when the function is called and restore it later.
-    cur.dev <- rgl::cur3d()
 
     ## Get the umat at the begining.
     umat <- start$umat # call begin then call update without sequencially
-    viewport <- rgl::par3d("viewport")
+    viewport <- rgl::par3d("viewport", dev = dp.dev)
 
     w <- viewport[["width"]]
     h <- viewport[["height"]]
     x <- (x - start$x) / w / 1 # 1 is empirically derived.
     y <- (y - start$y) / h / 1
-    umat <- start$umat
 
     rot <- 0
     if (start$x > 0.95 * w) {
@@ -605,10 +623,9 @@ dp_demo <- function(file = NULL, reso = 1.2, ews.r = 37, zoom = 0.5, xrd = FALSE
       rgl::par3d(subscene = start$cry.panel.id, userMatrix = umat)
       rgl::useSubscene3d(start$cry.panel.id)
       ## drawCry() # not necessary.
+      rgl::set3d(dp.dev, silent = TRUE)
     }
 
-    ## Restore the device ID.
-    rgl::set3d(cur.dev, silent = TRUE)
   }
 
   rotate <- function(r) {
